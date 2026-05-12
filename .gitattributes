@@ -1,0 +1,37 @@
+# Auto-detect text files, normalize to LF in the repo.
+# Windows checkouts can still see CRLF locally if a developer wants, but the
+# committed bytes are consistent — no more "5000 lines changed" phantom diffs.
+* text=auto eol=lf
+
+# Files that MUST stay LF regardless of OS — they break with CRLF.
+*.sh        text eol=lf
+*.bash      text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+
+# Source code — explicit LF for cross-platform sanity.
+*.java      text eol=lf
+*.kt        text eol=lf
+*.kts       text eol=lf
+*.sql       text eol=lf
+*.xml       text eol=lf
+*.properties text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+
+# Windows-only files that need CRLF.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary files — never touch line endings.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.jar       binary
+*.zip       binary
+*.gz        binary

@@ -1,0 +1,39 @@
+# Build outputs
+**/build/
+**/out/
+**/target/
+**/.gradle/
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Env files (never commit secrets)
+.env
+.env.local
+*.env.local
+
+# LocalStack persistence (gitignored — recreated on startup)
+infra/.localstack/
+
+# Spring Boot
+HELP.md

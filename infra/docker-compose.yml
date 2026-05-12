@@ -1,0 +1,67 @@
+name: payment-platform
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: payment-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_pass
+      POSTGRES_DB: payments
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_user -d payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: payment-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"          # LocalStack edge port (all AWS services)
+    environment:
+      SERVICES: sns,sqs,dynamodb,s3,cloudwatch,logs
+      DEBUG: 0
+      DOCKER_HOST: unix:///var/run/docker.sock
+      AWS_DEFAULT_REGION: us-east-1
+      # Persist LocalStack state across restarts (Pro feature, but harmless if unavailable)
+      PERSISTENCE: 1
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./localstack-init:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: payment-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  localstack_data:
+  pgadmin_data:
