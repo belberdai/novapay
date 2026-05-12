@@ -1,4 +1,4 @@
-name: payment-platform
+name: novapay
 
 services:
   postgres:
@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: payment_user
-      POSTGRES_PASSWORD: payment_pass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: payments
     ports:
       - "5432:5432"
@@ -25,17 +25,13 @@ services:
     container_name: payment-localstack
     restart: unless-stopped
     ports:
-      - "4566:4566"          # LocalStack edge port (all AWS services)
+      - "4566:4566"
     environment:
-      SERVICES: sns,sqs,dynamodb,s3,cloudwatch,logs
+      SERVICES: sns,sqs,dynamodb
       DEBUG: 0
-      DOCKER_HOST: unix:///var/run/docker.sock
       AWS_DEFAULT_REGION: us-east-1
-      # Persist LocalStack state across restarts (Pro feature, but harmless if unavailable)
-      PERSISTENCE: 1
     volumes:
       - localstack_data:/var/lib/localstack
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack-init:/etc/localstack/init/ready.d:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
@@ -43,25 +39,6 @@ services:
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: payment-pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@local.dev
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - ./pgadmin-servers.json:/pgadmin4/servers.json:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-
 volumes:
   postgres_data:
   localstack_data:
-  pgadmin_data:
