@@ -22,3 +22,12 @@ logging:
   level:
     org.flywaydb: INFO
     org.hibernate.SQL: DEBUG
+
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+    tracing:
+      export:
+        enabled: false
