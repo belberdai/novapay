@@ -34,14 +34,18 @@ public class PaymentStateTransition {
 
     protected PaymentStateTransition() { }
 
-    public static PaymentStateTransition recordTransition(UUID paymentId, PaymentStatus from, PaymentStatus to, String reason) {
+    public static PaymentStateTransition recordTransition(UUID paymentId,
+                                                          PaymentStatus from,
+                                                          PaymentStatus to,
+                                                          String reason,
+                                                          Instant occurredAt) {
         PaymentStateTransition transition = new PaymentStateTransition();
         transition.paymentId = paymentId;
         transition.fromState = from;
         transition.toState = to;
         transition.reason = reason;
         transition.actor = "system";
-        transition.occurredAt = Instant.now();
+        transition.occurredAt = occurredAt;
         return transition;
     }
 
