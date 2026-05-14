@@ -10,6 +10,12 @@ import java.util.UUID;
 @Entity
 @Table(name = "payment")
 public class Payment {
+    /**
+     * DESIGN NOTE: This class has no setters. State changes are only allowed through
+     * behavior methods (validate(), markProcessing(), complete(), fail()). This ensures
+     * the state machine rules are always enforced. The service cannot bypass them by
+     * calling a setStatus() method. State transitions are centralized, validated, and safe.
+     */
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -51,7 +57,8 @@ public class Payment {
                                  long amountCents,
                                  String currency,
                                  String idempotencyKey,
-                                 String description) {
+                                 String description,
+                                 Instant now) {
         Payment payment = new Payment();
         payment.sourceAccountId = sourceAccountId;
         payment.destinationAccountId = destinationAccountId;
@@ -60,45 +67,42 @@ public class Payment {
         payment.status = PaymentStatus.PENDING;
         payment.idempotencyKey = idempotencyKey;
         payment.description = description;
-        payment.createdAt = Instant.now();
-        payment.updatedAt = Instant.now();
+        payment.createdAt = now;
+        payment.updatedAt = now;
         return payment;
     }
 
-    public void validate() {
-        if (this.getStatus() == PaymentStatus.PENDING) {
-            this.status = PaymentStatus.VALIDATED;
-            this.updatedAt = Instant.now();
-        } else {
+    public void validate(Instant now) {
+        if (this.getStatus() != PaymentStatus.PENDING) {
             throw new IllegalPaymentStateTransition(this.getStatus(), PaymentStatus.VALIDATED);
         }
+        this.status = PaymentStatus.VALIDATED;
+        this.updatedAt = now;
     }
 
-    public void markProcessing() {
-        if (this.getStatus() == PaymentStatus.VALIDATED) {
-            this.status = PaymentStatus.PROCESSING;
-            this.updatedAt = Instant.now();
-        } else {
+    public void markProcessing(Instant now) {
+        if (this.getStatus() != PaymentStatus.VALIDATED) {
             throw new IllegalPaymentStateTransition(this.getStatus(), PaymentStatus.PROCESSING);
         }
+        this.status = PaymentStatus.PROCESSING;
+        this.updatedAt = now;
     }
 
-    public void complete() {
-        if (this.getStatus() == PaymentStatus.PROCESSING) {
-            this.status = PaymentStatus.COMPLETED;
-            this.updatedAt = Instant.now();
-        } else {
+    public void complete(Instant now) {
+        if (this.getStatus() != PaymentStatus.PROCESSING) {
             throw new IllegalPaymentStateTransition(this.getStatus(), PaymentStatus.COMPLETED);
         }
+        this.status = PaymentStatus.COMPLETED;
+        this.updatedAt = now;
     }
 
-    public void fail(String reason) {
+    public void fail(String reason, Instant now) {
         // reason will be saved in PaymentStateTransition
-        if (status == PaymentStatus.COMPLETED || status == PaymentStatus.FAILED) {
-            throw new IllegalPaymentStateTransition(status, PaymentStatus.FAILED);
+        if (this.getStatus() == PaymentStatus.COMPLETED || status == PaymentStatus.FAILED) {
+            throw new IllegalPaymentStateTransition(this.getStatus(), PaymentStatus.FAILED);
         }
         this.status = PaymentStatus.FAILED;
-        this.updatedAt = Instant.now();
+        this.updatedAt = now;
     }
 
     public UUID getId() { return id; }
