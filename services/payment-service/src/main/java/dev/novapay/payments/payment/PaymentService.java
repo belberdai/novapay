@@ -9,6 +9,8 @@ import dev.novapay.payments.outbox.OutboxEvent;
 import dev.novapay.payments.outbox.OutboxEventRepository;
 import dev.novapay.payments.payment.events.PaymentCreatedEvent;
 import dev.novapay.payments.payment.events.PaymentStateChangedEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -186,6 +188,11 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Payment getPayment(UUID paymentId) {
         return mustFind(paymentId);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Payment> listPayments(Pageable pageable) {
+        return paymentRepository.findAll(pageable);
     }
 
     private Payment mustFind(UUID paymentId) {
