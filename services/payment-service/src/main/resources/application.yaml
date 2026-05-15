@@ -21,7 +21,7 @@ spring:
 logging:
   level:
     org.flywaydb: INFO
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: INFO
 
 management:
   otlp:
@@ -31,3 +31,16 @@ management:
     tracing:
       export:
         enabled: false
+
+aws:
+  region: us-east-1
+  access-key-id: test
+  secret-access-key: test
+  sns:
+    endpoint: http://localhost:4566   # LocalStack
+    payment-events-topic-arn: arn:aws:sns:us-east-1:000000000000:payment-events
+
+outbox:
+  poller:
+    fixed-delay-ms: 5000
+    batch-size: 100
