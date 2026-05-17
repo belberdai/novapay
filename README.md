@@ -1,6 +1,6 @@
 # NovaPay Payment Platform
 
-[![CI](https://github.com/novapay/novapay-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/novapay/novapay-platform/actions/workflows/ci.yml)
+[![CI](https://github.com/belberdai/novapay-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/belberdai/novapay-platform/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen)
 ![Postgres](https://img.shields.io/badge/Postgres-18-blue)
@@ -18,23 +18,23 @@ driven communication via SNS/SQS.
 
 ```mermaid
 graph TB
-    Client[Client] -->|POST /payments<br/>Idempotency-Key| API[PaymentController]
-    API --> Service[PaymentService<br/>@Transactional]
+  Client[Client] -->|"POST /payments + Idempotency-Key"| API[PaymentController]
+  API --> Service["PaymentService @Transactional"]
 
-    Service -->|"1. idempotency check"| IDB[(idempotency_record)]
-    Service -->|"2. save payment"| PDB[(payment)]
-    Service -->|"3. audit transition"| TDB[(payment_state_transition)]
-    Service -->|"4. queue event"| ODB[(outbox_event<br/>published_at = NULL)]
-    Service -->|"5. store response"| IDB
+  Service -->|"1. idempotency check"| IDB[(idempotency_record)]
+  Service -->|"2. save payment"| PDB[(payment)]
+  Service -->|"3. audit transition"| TDB[(payment_state_transition)]
+  Service -->|"4. queue event"| ODB[("outbox_event published_at = NULL")]
+  Service -->|"5. store response"| IDB
 
-    Poller[OutboxPublisher<br/>@Scheduled] -.->|"SELECT FOR UPDATE<br/>WHERE published_at IS NULL"| ODB
-    Poller -->|publish| SNS[SNS Topic<br/>payment-events]
-    SNS -->|subscription| SQS[SQS Queue<br/>payment-analytics]
-    SQS -.->|future Project 2| Analytics[Kotlin Analytics Service]
+  Poller["OutboxPublisher @Scheduled"] -.->|"poll unpublished"| ODB
+  Poller -->|"publish"| SNS["SNS Topic payment-events"]
+  SNS -->|"subscription"| SQS["SQS Queue payment-analytics"]
+  SQS -.->|"future Project 2"| Analytics[Kotlin Analytics Service]
 
-    style Service fill:#e1f5ff
-    style Poller fill:#fff4e1
-    style SNS fill:#f0e1ff
+  style Service fill:#e1f5ff
+  style Poller fill:#fff4e1
+  style SNS fill:#f0e1ff
 ```
 All five DB writes happen in one `@Transactional` method. Either everything
 commits or nothing does. No scenario produces a payment without its outbox event,
@@ -256,4 +256,4 @@ Deliberately scoped out of v1, listed here so the cuts are honest:
 
 ## License
 
-[MIT]
+MIT — see [LICENSE](LICENSE).
