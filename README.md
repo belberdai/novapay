@@ -1,6 +1,6 @@
 # NovaPay Payment Platform
 
-[![CI](https://github.com/belberdai/novapay-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/belberdai/novapay-platform/actions/workflows/ci.yml)
+[![CI](https://github.com/belberdai/novapay/actions/workflows/ci.yaml/badge.svg)](https://github.com/belberdai/novapay/actions/workflows/ci.yaml)
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen)
 ![Postgres](https://img.shields.io/badge/Postgres-18-blue)
