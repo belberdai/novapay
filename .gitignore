@@ -9,6 +9,9 @@
 *.iml
 *.iws
 *.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
 
 # VS Code
 .vscode/
@@ -37,3 +40,18 @@ infra/.localstack/
 
 # Spring Boot
 HELP.md
+
+### Kotlin ###
+.kotlin
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/

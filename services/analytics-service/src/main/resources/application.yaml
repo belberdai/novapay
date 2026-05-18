@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: analytics-service
+server:
+  port: 8081
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  oltp:
+    metrics:
+      export:
+        enabled: false
+    tracing:
+      export:
+        enabled: false
