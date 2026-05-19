@@ -1,0 +1,20 @@
+info:
+  name: get-individual-payment
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{host}}/api/v1/payments/{{paymentId}}"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: paymentId
+      value: 7fab0017-7945-417e-9399-a9ec5c0ba267
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,30 @@
+info:
+  name: replay-payment
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{host}}/api/v1/payments"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Idempotency-Key
+      value: FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
+  body:
+    type: json
+    data: |-
+      {
+          "sourceAccountId": "{{srcId}}",
+          "destinationAccountId": "{{destId}}",
+          "amountCents": 1500,
+          "currency": "CAD",
+          "description": "Test payment"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
