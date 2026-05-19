@@ -2,6 +2,8 @@ package dev.novapay.analytics.consumer
 
 import aws.sdk.kotlin.services.sqs.SqsClient
 import aws.sdk.kotlin.services.sqs.model.ReceiveMessageRequest
+import com.fasterxml.jackson.databind.ObjectMapper
+import dev.novapay.analytics.event.PaymentCreatedEvent
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component
 // Constructor injection via primary constructor
 class SqsMessageConsumer(
     private val sqsClient: SqsClient,
+    private val objectMapper: ObjectMapper,
     @Value("\${aws.sqs.queue-url}") private val queueUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -25,7 +28,12 @@ class SqsMessageConsumer(
         })
 
         response.messages?.forEach { message ->
-            log.info("Received SQS message: id={}, body={}", message.messageId, message.body)
+            try {
+                val event = objectMapper.readValue(message.body, PaymentCreatedEvent::class.java)
+                log.info("Received: {}", event)
+            } catch (e: Exception) {
+                log.error("Failed to parse message body: {}", message.body, e)
+            }
             // TODO: delete from queue after processing
         }
     }
