@@ -51,7 +51,7 @@ awslocal sqs set-queue-attributes \
   }" \
   --region $REGION
 
-# ---- DynamoDB tables (for Project 2 later) ----
+# ---- DynamoDB tables ----
 echo "Creating DynamoDB table: account-analytics"
 awslocal dynamodb create-table \
   --table-name account-analytics \
@@ -63,7 +63,16 @@ awslocal dynamodb create-table \
       AttributeName=window,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST \
   --region $REGION
-
+echo "Creating DynamoDB table: payment_event_ledger"
+awslocal dynamodb create-table \
+    --table-name payment_event_ledger \
+    --attribute-definitions \
+        AttributeName=paymentId,AttributeType=S \
+        AttributeName=occurredAt,AttributeType=S \
+    --key-schema \
+        AttributeName=paymentId,KeyType=HASH \
+        AttributeName=occurredAt,KeyType=RANGE \
+    --billing-mode PAY_PER_REQUEST
 echo "==> Done. AWS resources ready:"
 echo "    SNS topic:        payment-events"
 echo "    SQS queue:        payment-analytics  (DLQ: payment-analytics-dlq, max receives: 3)"
