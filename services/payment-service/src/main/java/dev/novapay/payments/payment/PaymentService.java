@@ -105,7 +105,7 @@ public class PaymentService {
         ));
 
         // ---- 4. Queue the outbox event ----
-        PaymentCreatedEvent event = new PaymentCreatedEvent(
+        PaymentCreatedEvent event = PaymentCreatedEvent.of(
                 payment.getId(),
                 payment.getSourceAccountId(),
                 payment.getDestinationAccountId(),
@@ -209,7 +209,7 @@ public class PaymentService {
                 payment.getId(), from, to, reason, now
         ));
 
-        PaymentStateChangedEvent event = new PaymentStateChangedEvent(
+        PaymentStateChangedEvent event = PaymentStateChangedEvent.of(
                 payment.getId(), from, to, reason, now
         );
         outboxEventRepository.save(OutboxEvent.create(
