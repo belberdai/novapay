@@ -1,0 +1,28 @@
+info:
+  name: missing-key-payment
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{host}}/api/v1/payments"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "sourceAccountId": "{{srcId}}",
+          "destinationAccountId": "{{destId}}",
+          "amountCents": 1500,
+          "currency": "CAD",
+          "description": "Test payment"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
