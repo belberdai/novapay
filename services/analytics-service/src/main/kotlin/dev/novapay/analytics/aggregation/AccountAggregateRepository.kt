@@ -2,10 +2,13 @@ package dev.novapay.analytics.aggregation
 
 import aws.sdk.kotlin.services.dynamodb.DynamoDbClient
 import aws.sdk.kotlin.services.dynamodb.model.AttributeValue
+import aws.sdk.kotlin.services.dynamodb.model.GetItemRequest
 import aws.sdk.kotlin.services.dynamodb.model.UpdateItemRequest
 import dev.novapay.analytics.event.PaymentCreatedEvent
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.time.Instant
+import java.util.UUID
 
 /**
  * Maintains per-account rollup metrics in DynamoDB.
@@ -77,5 +80,23 @@ class AccountAggregateRepository(
         })
 
         log.debug("Updated aggregate for account={}, +{}cents", accountId, amountCents)
+    }
+
+    suspend fun findByAccountId(accountId: UUID): AccountAggregate? {
+        val response = dynamoDbClient.getItem(GetItemRequest {
+            this.tableName = TABLE_NAME
+            this.key = mapOf("accountId" to AttributeValue.S(accountId.toString()))
+        })
+
+        val item = response.item ?: return null
+
+        return AccountAggregate(
+            accountId = UUID.fromString(item["accountId"]!!.asS()),
+            transactionsSent = item["transactionsSent"]?.asN()?.toLong() ?: 0L, // default to 0L if never sent money
+            transactionsReceived = item["transactionsReceived"]?.asN()?.toLong() ?: 0L,
+            totalCentsSent = item["totalCentsSent"]?.asN()?.toLong() ?: 0L,
+            totalCentsReceived = item["totalCentsReceived"]?.asN()?.toLong() ?: 0L,
+            lastActivityAt = item["lastActivityAt"]?.asS()?.let { Instant.parse(it) },
+        )
     }
 }

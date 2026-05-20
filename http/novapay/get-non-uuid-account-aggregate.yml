@@ -1,0 +1,15 @@
+info:
+  name: get-non-uuid-account-aggregate
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: "{{host_analytics}}/analytics/accounts/non-uuid"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

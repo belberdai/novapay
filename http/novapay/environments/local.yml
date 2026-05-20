@@ -6,3 +6,5 @@ variables:
     value: d6f566c3-a7a7-49bc-8478-25f425ce6738
   - name: destId
     value: 8ea56e5d-ca74-4d09-8be8-ece994e25553
+  - name: host_analytics
+    value: http://localhost:8081

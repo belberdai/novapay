@@ -1,0 +1,15 @@
+info:
+  name: get-account-aggregate
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: "{{host_analytics}}/analytics/accounts/d6f566c3-a7a7-49bc-8478-25f425ce6738"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
