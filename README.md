@@ -14,6 +14,15 @@ driven communication via SNS/SQS.
 
 ---
 
+## Development Methodology & Learning Objectives
+
+This project was built as a rigorous technical upskilling exercise to master advanced distributed systems patterns. The architecture was developed through an iterative, collaborative workflow pairing the author with Claude Code.
+
+* **Architectural Prototyping:** The implementation of the Transactional Outbox pattern, database-level idempotency, and the domain state machine was an iterative process. I utilized Claude Code to brainstorm design trade-offs, evaluate schema topologies, and rapidly prototype architectural variations.
+* **Engineering Ownership:** While AI assisted in proposing structural options and accelerating implementation (Java 25/Spring Boot 4 boilerplate, Docker configurations, and test suites), every design decision was critically evaluated, refactored, and thoroughly analyzed by the author to ensure real-world production viability.
+
+---
+
 ## Architecture
 
 ```mermaid
