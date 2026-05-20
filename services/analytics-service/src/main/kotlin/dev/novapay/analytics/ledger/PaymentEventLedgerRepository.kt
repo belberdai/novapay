@@ -2,6 +2,7 @@ package dev.novapay.analytics.ledger
 
 import aws.sdk.kotlin.services.dynamodb.DynamoDbClient
 import aws.sdk.kotlin.services.dynamodb.model.AttributeValue
+import aws.sdk.kotlin.services.dynamodb.model.ConditionalCheckFailedException
 import aws.sdk.kotlin.services.dynamodb.model.PutItemRequest
 import dev.novapay.analytics.event.PaymentCreatedEvent
 import org.slf4j.LoggerFactory
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component
  * Each event is a row keyed by (paymentId, occurredAt).
  */
 @Component
-class PaymentEventLedger(
+class PaymentEventLedgerRepository(
     private val dynamoDbClient: DynamoDbClient,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -21,7 +22,7 @@ class PaymentEventLedger(
         const val TABLE_NAME = "payment_event_ledger"
     }
 
-    suspend fun record(event: PaymentCreatedEvent) {
+    suspend fun record(event: PaymentCreatedEvent): Boolean {
         val item = mapOf(
             "paymentId" to AttributeValue.S(event.paymentId.toString()),
             "occurredAt" to AttributeValue.S(event.occurredAt.toString()),
@@ -33,11 +34,18 @@ class PaymentEventLedger(
             "status" to AttributeValue.S(event.status.toString()),
         )
 
-        dynamoDbClient.putItem(PutItemRequest {
-            this.tableName = TABLE_NAME
-            this.item = item
-        })
-
-        log.debug("Wrote event to ledger: paymentId={}, occurredAt={}", event.paymentId, event.occurredAt)
+        return try {
+            dynamoDbClient.putItem(PutItemRequest {
+                this.tableName = TABLE_NAME
+                this.item = item
+                this.conditionExpression = "attribute_not_exists(paymentId)"
+            })
+            log.debug("Recorded event in ledger: paymentId={}", event.paymentId)
+            true // record succeded
+        } catch (e: ConditionalCheckFailedException) {
+            log.info("Skipping duplicate event: paymentId={}, occurredAt={}",
+                event.paymentId, event.occurredAt)
+            false // record failed
+        }
     }
 }

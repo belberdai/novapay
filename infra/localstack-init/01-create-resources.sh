@@ -73,7 +73,17 @@ awslocal dynamodb create-table \
         AttributeName=paymentId,KeyType=HASH \
         AttributeName=occurredAt,KeyType=RANGE \
     --billing-mode PAY_PER_REQUEST
+echo "Creating DynamoDB table: account_aggregates"
+awslocal dynamodb create-table \
+    --table-name account_aggregates \
+    --attribute-definitions \
+        AttributeName=accountId,AttributeType=S \
+    --key-schema \
+        AttributeName=accountId,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST
 echo "==> Done. AWS resources ready:"
 echo "    SNS topic:        payment-events"
 echo "    SQS queue:        payment-analytics  (DLQ: payment-analytics-dlq, max receives: 3)"
 echo "    DynamoDB table:   account-analytics"
+echo "    DynamoDB table:   payment_event_ledger"
+echo "    DynamoDB table:   account_aggregates"
