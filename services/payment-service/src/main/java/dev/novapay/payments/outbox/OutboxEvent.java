@@ -31,8 +31,18 @@ public class OutboxEvent {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private OutboxEventStatus status;
+
+    @Column(name = "publish_attempts", nullable = false)
+    private int publishAttempts;
+
     @Column(name = "published_at")
     private Instant publishedAt;
+
+    @Column(name = "poisoned_at")
+    private Instant poisonedAt;
 
     protected OutboxEvent() { }
 
@@ -45,12 +55,35 @@ public class OutboxEvent {
         event.payload = payload;
         event.createdAt = Instant.now();
         event.publishedAt = null;
+        event.status = OutboxEventStatus.PENDING;
+        event.publishAttempts = 0;
         return event;
     }
 
     public void markPublished(Instant now) {
+        this.status = OutboxEventStatus.PUBLISHED;
         this.publishedAt = now;
+    }
 
+    public void recordPublishAttempt() {
+        this.publishAttempts++;
+    }
+
+    public void markPoisoned(Instant now) {
+        this.status = OutboxEventStatus.POISONED;
+        this.poisonedAt = now;
+    }
+
+    public OutboxEventStatus getStatus() {
+        return status;
+    }
+
+    public int getPublishAttempts() {
+        return publishAttempts;
+    }
+
+    public Instant getPoisonedAt() {
+        return poisonedAt;
     }
 
     public Long getId() {  return id; }
