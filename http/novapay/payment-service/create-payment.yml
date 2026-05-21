@@ -1,7 +1,7 @@
 info:
-  name: missing-key-payment
+  name: create-payment
   type: http
-  seq: 4
+  seq: 2
 
 http:
   method: POST
@@ -9,6 +9,8 @@ http:
   headers:
     - name: Content-Type
       value: application/json
+    - name: Idempotency-Key
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
@@ -20,6 +22,16 @@ http:
           "description": "Test payment"
       }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const body = res.getBody();
+
+        if (body && body.id) {
+          bru.setVar("paymentId", body.id);
+        }
 
 settings:
   encodeUrl: true

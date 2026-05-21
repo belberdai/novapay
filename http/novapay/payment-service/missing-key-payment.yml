@@ -1,7 +1,7 @@
 info:
-  name: create-payment
+  name: missing-key-payment
   type: http
-  seq: 1
+  seq: 5
 
 http:
   method: POST
@@ -9,8 +9,6 @@ http:
   headers:
     - name: Content-Type
       value: application/json
-    - name: Idempotency-Key
-      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-

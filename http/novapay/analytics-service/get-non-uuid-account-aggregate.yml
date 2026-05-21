@@ -1,11 +1,11 @@
 info:
-  name: get-account-aggregate
+  name: get-non-uuid-account-aggregate
   type: http
-  seq: 8
+  seq: 2
 
 http:
   method: GET
-  url: "{{host_analytics}}/analytics/accounts/d6f566c3-a7a7-49bc-8478-25f425ce6738"
+  url: "{{host_analytics}}/analytics/accounts/non-uuid"
   auth: inherit
 
 settings:
