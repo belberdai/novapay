@@ -79,19 +79,37 @@ public class OutboxPublisher {
                 if (event.getPublishAttempts() >= MAX_PUBLISH_ATTEMPTS) {
                     event.markPoisoned(now);
                     poisoned++;
-                    log.error("Outbox event {} poisoned after {} attempts",
-                            event.getId(), event.getPublishAttempts(), e);
+                    log.error("Outbox event {} poisoned after {} attempts. Last error: {}",
+                            event.getId(),
+                            event.getPublishAttempts(),
+                            rootCauseMessage(e));
+                    log.debug("Stack trace for poisoned event {}:", event.getId(), e);
                 } else {
-                    log.warn("Outbox event {} publish failed (attempt {}/{})",
-                            event.getId(), event.getPublishAttempts(), MAX_PUBLISH_ATTEMPTS);
+                    log.warn("Outbox event {} publish failed (attempt {}/{}). Cause: {}",
+                            event.getId(),
+                            event.getPublishAttempts(),
+                            MAX_PUBLISH_ATTEMPTS,
+                            rootCauseMessage(e));
                 }
-                // Per-event failure isolation: continue with next event.
-                // The transaction will commit publishAttempts increments + any successful marks.
             }
         }
 
         if (published > 0 || poisoned > 0) {
             log.info("Outbox cycle: published={}, poisoned={}", published, poisoned);
         }
+    }
+
+    /**
+     * Walks the exception cause chain to the deepest message. SDK exceptions
+     * often wrap the real failure (HttpHostConnectException → ConnectException →
+     * "Connection refused") several layers down. The root message is the
+     * operationally useful part.
+     */
+    private String rootCauseMessage(Throwable t) {
+        Throwable current = t;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getClass().getSimpleName() + ": " + current.getMessage();
     }
 }
