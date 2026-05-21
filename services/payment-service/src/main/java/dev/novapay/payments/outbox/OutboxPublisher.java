@@ -52,10 +52,12 @@ public class OutboxPublisher {
      * SELECT FOR UPDATE lock is held until commit, and so the published_at
      * updates roll back on SNS failure.
      */
+    private static final int MAX_PUBLISH_ATTEMPTS = 5;
+
     @Scheduled(fixedDelayString = "${outbox.poller.fixed-delay-ms:1000}")
     @Transactional
     public void publishPendingEvents() {
-        List<OutboxEvent> pending = outboxRepository.findUnpublishedForUpdate(
+        List<OutboxEvent> pending = outboxRepository.findPendingForUpdate(
                 PageRequest.of(0, batchSize));
 
         if (pending.isEmpty()) {
@@ -64,20 +66,50 @@ public class OutboxPublisher {
 
         log.debug("Publishing {} outbox events", pending.size());
         Instant now = Instant.now(clock);
+        int published = 0;
+        int poisoned = 0;
 
         for (OutboxEvent event : pending) {
             try {
                 snsPublisher.publish(event);
                 event.markPublished(now);
+                published++;
             } catch (Exception e) {
-                // If publish fails for ANY event, abort the batch.
-                // The transaction rolls back; nothing is marked published.
-                // Next cycle will retry the whole batch from the start.
-                log.error("Failed to publish outbox event {} — aborting batch", event.getId(), e);
-                throw e;
+                event.recordPublishAttempt();
+                if (event.getPublishAttempts() >= MAX_PUBLISH_ATTEMPTS) {
+                    event.markPoisoned(now);
+                    poisoned++;
+                    log.error("Outbox event {} poisoned after {} attempts. Last error: {}",
+                            event.getId(),
+                            event.getPublishAttempts(),
+                            rootCauseMessage(e));
+                    log.debug("Stack trace for poisoned event {}:", event.getId(), e);
+                } else {
+                    log.warn("Outbox event {} publish failed (attempt {}/{}). Cause: {}",
+                            event.getId(),
+                            event.getPublishAttempts(),
+                            MAX_PUBLISH_ATTEMPTS,
+                            rootCauseMessage(e));
+                }
             }
         }
 
-        log.info("Published {} outbox events", pending.size());
+        if (published > 0 || poisoned > 0) {
+            log.info("Outbox cycle: published={}, poisoned={}", published, poisoned);
+        }
+    }
+
+    /**
+     * Walks the exception cause chain to the deepest message. SDK exceptions
+     * often wrap the real failure (HttpHostConnectException → ConnectException →
+     * "Connection refused") several layers down. The root message is the
+     * operationally useful part.
+     */
+    private String rootCauseMessage(Throwable t) {
+        Throwable current = t;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getClass().getSimpleName() + ": " + current.getMessage();
     }
 }

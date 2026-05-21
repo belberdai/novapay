@@ -24,10 +24,8 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
      * <a href="https://www.postgresql.org/docs/current/bgworker.html">...</a>
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query(value = """
-            SELECT e FROM OutboxEvent e
-            WHERE e.publishedAt IS NULL
-            ORDER BY e.id ASC
-            """)
-    List<OutboxEvent> findUnpublishedForUpdate(Pageable pageable);
+    @Query("SELECT o FROM OutboxEvent o " +
+            "WHERE o.status = OutboxEventStatus.PENDING " +
+            "ORDER BY o.id")
+    List<OutboxEvent> findPendingForUpdate(Pageable pageable);
 }
