@@ -27,11 +27,3 @@ data class PaymentCreatedEvent(
     val status: PaymentStatus, // same enum as in payment-service
     val occurredAt: Instant,
 )
-
-enum class PaymentStatus {
-    PENDING,
-    VALIDATED,
-    PROCESSING,
-    COMPLETED,
-    FAILED
-}
