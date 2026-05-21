@@ -1,0 +1,7 @@
+info:
+  name: analytics-service
+  type: folder
+  seq: 3
+
+request:
+  auth: inherit

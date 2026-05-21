@@ -1,7 +1,7 @@
 info:
   name: get-non-uuid-account-aggregate
   type: http
-  seq: 10
+  seq: 2
 
 http:
   method: GET

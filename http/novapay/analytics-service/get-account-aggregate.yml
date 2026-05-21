@@ -1,11 +1,11 @@
 info:
-  name: get-non-existent-account-aggregate
+  name: get-account-aggregate
   type: http
-  seq: 9
+  seq: 2
 
 http:
   method: GET
-  url: "{{host_analytics}}/analytics/accounts/ffffffff-ffff-ffff-ffff-ffffffffffff"
+  url: "{{host_analytics}}/analytics/accounts/d6f566c3-a7a7-49bc-8478-25f425ce6738"
   auth: inherit
 
 settings:
