@@ -5,21 +5,30 @@ import dev.novapay.payments.account.Account;
 import dev.novapay.payments.account.AccountRepository;
 import dev.novapay.payments.idempotency.IdempotencyMismatchException;
 import dev.novapay.payments.idempotency.IdempotencyRecordRepository;
-import dev.novapay.payments.outbox.OutboxEventRepository;
+import dev.novapay.payments.outbox.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 class PaymentServiceIntegrationTest {
+
+    @MockitoBean
+    private SnsEventPublisher snsEventPublisher;
+
+    @Autowired
+    private OutboxPublisher outboxPublisher;
 
     @Autowired
     private PaymentService paymentService;
@@ -65,10 +74,17 @@ class PaymentServiceIntegrationTest {
                 "desc", idempotencyKey, "{\"amount\":1000}");
 
         // Assert
-        assertThat(paymentRepository.findById(p.getId())).isPresent();
-        assertThat(transitionRepository.findByPaymentIdOrderByOccurredAtAsc(p.getId())).hasSize(1);
-        assertThat(outboxEventRepository.findAll()).hasSize(1);
+        UUID paymentId = p.getId();
+        assertThat(paymentRepository.findById(paymentId)).isPresent();
+        assertThat(transitionRepository.findByPaymentIdOrderByOccurredAtAsc(paymentId)).hasSize(1);
         assertThat(idempotencyRecordRepository.findById(idempotencyKey)).isPresent();
+        OutboxEvent event = outboxEventRepository.findAll().getFirst();
+        assertThat(event.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
+        assertThat(event.getPublishAttempts()).isZero();
+        assertThat(event.getPublishedAt()).isNull();
+        assertThat(event.getPoisonedAt()).isNull();
+        assertThat(event.getEventType()).isEqualTo("PaymentCreated");
+        assertThat(event.getAggregateId()).isEqualTo(paymentId);
     }
 
     @Test
@@ -185,5 +201,63 @@ class PaymentServiceIntegrationTest {
         // Act & Assert
         assertThatThrownBy(() -> paymentService.getPayment(nonExistentId))
                 .isInstanceOf(PaymentNotFoundException.class);
+    }
+
+    @Test
+    void outboxPollerPublishesPendingEvents() {
+        // Arrange
+        paymentService.createPayment(
+                srcId,
+                destId,
+                1500L,
+                "CAD",
+                "test description",
+                "test-key-publisher-1",
+                "{}"
+        );
+        OutboxEvent before = outboxEventRepository.findAll().getFirst();
+        assertThat(before.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
+        assertThat(before.getPublishedAt()).isNull();
+
+        // Act
+        outboxPublisher.publishPendingEvents();
+
+        // Assert
+        OutboxEvent after = outboxEventRepository.findById(before.getId()).orElseThrow();
+        assertThat(after.getStatus()).isEqualTo(OutboxEventStatus.PUBLISHED);
+        assertThat(after.getPublishedAt()).isNotNull();
+        assertThat(after.getPublishAttempts()).isZero();   // no retries needed
+        verify(snsEventPublisher).publish(any(OutboxEvent.class));
+    }
+
+    @Test
+    void outboxPollerPoisonsEventAfterMaxAttempts() {
+        // Arrange
+        doThrow(new RuntimeException("simulated SNS outage"))
+                .when(snsEventPublisher).publish(any(OutboxEvent.class));
+        paymentService.createPayment(
+                srcId,
+                destId,
+                1500L,
+                "CAD",
+                "test description",
+                "test-key-poison-1",
+                "{}"
+        );
+        OutboxEvent before = outboxEventRepository.findAll().get(0);
+        assertThat(before.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
+
+        // Act
+        for (int i = 0; i < 5; i++) {
+            outboxPublisher.publishPendingEvents();
+        }
+
+        // Arrange
+        OutboxEvent after = outboxEventRepository.findById(before.getId()).orElseThrow();
+        assertThat(after.getStatus()).isEqualTo(OutboxEventStatus.POISONED);
+        assertThat(after.getPublishAttempts()).isEqualTo(5);
+        assertThat(after.getPoisonedAt()).isNotNull();
+        assertThat(after.getPublishedAt()).isNull();   // never published
+        verify(snsEventPublisher, times(5)).publish(any(OutboxEvent.class));
     }
 }
