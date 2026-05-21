@@ -1,6 +1,9 @@
 spring:
   application:
     name: payment-service
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: jdbc:postgresql://localhost:5432/payments
     username: ${POSTGRES_USERNAME}
