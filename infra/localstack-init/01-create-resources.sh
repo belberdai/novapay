@@ -81,9 +81,20 @@ awslocal dynamodb create-table \
     --key-schema \
         AttributeName=accountId,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST
+echo "Creating DynamoDB table: anomaly_flags"
+awslocal dynamodb create-table \
+    --table-name anomaly_flags \
+    --attribute-definitions \
+        AttributeName=accountId,AttributeType=S \
+        AttributeName=flaggedAt,AttributeType=S \
+    --key-schema \
+        AttributeName=accountId,KeyType=HASH \
+        AttributeName=flaggedAt,KeyType=RANGE \
+    --billing-mode PAY_PER_REQUEST
 echo "==> Done. AWS resources ready:"
 echo "    SNS topic:        payment-events"
 echo "    SQS queue:        payment-analytics  (DLQ: payment-analytics-dlq, max receives: 3)"
 echo "    DynamoDB table:   account-analytics"
 echo "    DynamoDB table:   payment_event_ledger"
 echo "    DynamoDB table:   account_aggregates"
+echo "    DynamoDB table:   anomaly_flags"

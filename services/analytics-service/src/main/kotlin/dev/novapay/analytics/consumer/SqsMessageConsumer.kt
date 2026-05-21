@@ -5,6 +5,7 @@ import aws.sdk.kotlin.services.sqs.model.DeleteMessageRequest
 import aws.sdk.kotlin.services.sqs.model.ReceiveMessageRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.novapay.analytics.aggregation.AccountAggregateRepository
+import dev.novapay.analytics.anomaly.AnomalyDetector
 import dev.novapay.analytics.event.PaymentCreatedEvent
 import dev.novapay.analytics.ledger.PaymentEventLedgerRepository
 import kotlinx.coroutines.runBlocking
@@ -20,6 +21,7 @@ class SqsMessageConsumer(
     private val objectMapper: ObjectMapper,
     private val paymentEventLedgerRepository: PaymentEventLedgerRepository,
     private val accountAggregateRepository: AccountAggregateRepository,
+    private val anomalyDetector: AnomalyDetector,
     @Value("\${aws.sqs.queue-url}") private val queueUrl: String,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -38,6 +40,7 @@ class SqsMessageConsumer(
                 val isNewEvent = paymentEventLedgerRepository.record(event)
                 if (isNewEvent) {
                     accountAggregateRepository.applyEvent(event)
+                    anomalyDetector.detect(event)
                     log.info("Processed event: paymentId={}", event.paymentId)
                 }
                 sqsClient.deleteMessage(DeleteMessageRequest {
