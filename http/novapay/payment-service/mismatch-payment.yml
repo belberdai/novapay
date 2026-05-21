@@ -1,7 +1,7 @@
 info:
   name: mismatch-payment
   type: http
-  seq: 1
+  seq: 4
 
 http:
   method: POST
@@ -10,7 +10,7 @@ http:
     - name: Content-Type
       value: application/json
     - name: Idempotency-Key
-      value: FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
+      value: "{{paymentId}}"
   body:
     type: json
     data: |-

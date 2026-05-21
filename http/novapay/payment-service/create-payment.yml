@@ -1,7 +1,7 @@
 info:
   name: create-payment
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
@@ -22,6 +22,16 @@ http:
           "description": "Test payment"
       }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const body = res.getBody();
+
+        if (body && body.id) {
+          bru.setVar("paymentId", body.id);
+        }
 
 settings:
   encodeUrl: true

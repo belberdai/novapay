@@ -1,7 +1,7 @@
 info:
   name: get-individual-payment
   type: http
-  seq: 1
+  seq: 7
 
 http:
   method: GET
