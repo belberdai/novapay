@@ -5,7 +5,9 @@ info:
 
 http:
   method: GET
-  url: "{{host_analytics}}/analytics/accounts/d6f566c3-a7a7-49bc-8478-25f425ce6738"
+  url: "{{host_analytics}}/analytics/accounts/{{srcId}}"
+  body:
+    type: none
   auth: inherit
 
 settings:
