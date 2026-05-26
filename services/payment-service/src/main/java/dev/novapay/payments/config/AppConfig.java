@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
@@ -32,17 +33,23 @@ public class AppConfig {
     SnsClient snsClient(
             @Value("${aws.sns.endpoint:}") String endpoint,
             @Value("${aws.region:us-east-1}") String region,
-            @Value("${aws.access-key-id:test}") String accessKey,
-            @Value("${aws.secret-access-key:test}") String secretKey) {
+            @Value("${aws.access-key-id:}") String accessKey,
+            @Value("${aws.secret-access-key:}") String secretKey) {
 
         SnsClientBuilder builder = SnsClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)));
+                .region(Region.of(region));
 
-        // Only override endpoint in dev for LocalStack
+        // LocalStack: explicit static credentials + endpoint override.
+        // Real AWS: DefaultCredentialsProvider picks up the ECS task role
+        // via the container credentials endpoint automatically.
         if (!endpoint.isBlank()) {
-            builder.endpointOverride(URI.create(endpoint));
+            builder.endpointOverride(URI.create(endpoint))
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(
+                                    accessKey.isBlank() ? "test" : accessKey,
+                                    secretKey.isBlank() ? "test" : secretKey)));
+        } else {
+            builder.credentialsProvider(DefaultCredentialsProvider.create());
         }
 
         return builder.build();
